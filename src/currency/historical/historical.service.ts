@@ -7,6 +7,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import * as process from 'process';
+import { HistoricalPeriods } from '../../types';
 
 @Injectable()
 export class HistoricalService {
@@ -42,6 +43,38 @@ export class HistoricalService {
     );
   }
 
+  async getHistoricalRatesByPeriod(
+    currencySign: string,
+    period: HistoricalPeriods,
+  ) {
+    if (!currencySign) {
+      throw new Error('Currency sign is required!');
+    }
+    if (!period) {
+      throw new Error('Interval is required!');
+    }
+
+    return this.historicalModel
+      .findOne({}, {}, { sort: { date: -1 } })
+      .then((doc) => {
+        if (!doc.data[currencySign]) {
+          throw new Error('Currency sign is not valid!');
+        }
+
+        if (period === HistoricalPeriods.MONTH) {
+          return this.getHistoricalRatesByMonth(doc.date, currencySign);
+        }
+
+        if (period === HistoricalPeriods.DAY) {
+          return this.getHistoricalRatesByDay(currencySign);
+        }
+
+        if (period === HistoricalPeriods.YEAR) {
+          return this.getHistoricalRatesByYear(doc.date, currencySign);
+        }
+      });
+  }
+
   async updateHistoricalRates() {
     let start = this.getStartDate();
     let end = this.getEndDate();
@@ -59,6 +92,32 @@ export class HistoricalService {
       // To be ok with API rate limit
       await this.sleepFor(20000);
     }
+  }
+
+  private async getHistoricalRatesByYear(date: string, currencySign: string) {
+    const dayNumber = dayjs(date).get('date');
+    const monthNumber = dayjs(date).format('MM');
+    return this.historicalModel
+      .find()
+      .where({ date: { $regex: `.*-${monthNumber}-${dayNumber}` } })
+      .sort({ date: -1 })
+      .select({ date: 1, data: { [currencySign]: 1 } });
+  }
+
+  private async getHistoricalRatesByDay(currencySign: string) {
+    return this.historicalModel
+      .find()
+      .sort({ date: -1 })
+      .select({ date: 1, data: { [currencySign]: 1 } });
+  }
+
+  private async getHistoricalRatesByMonth(date: string, currencySign: string) {
+    const dayNumber = dayjs(date).get('date');
+    return this.historicalModel
+      .find()
+      .where({ date: { $regex: `.*-${dayNumber}` } })
+      .sort({ date: -1 })
+      .select({ date: 1, data: { [currencySign]: 1 } });
   }
 
   private async sleepFor(ms) {
