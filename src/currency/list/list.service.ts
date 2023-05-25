@@ -10,6 +10,6 @@ export class ListService {
   ) {}
 
   async findAll(): Promise<List[]> {
-    return this.listModel.find({}, {}, { sort: { name: -1 } }).exec();
+    return this.listModel.find({}, {}, { sort: { name: 1 } }).exec();
   }
 }
