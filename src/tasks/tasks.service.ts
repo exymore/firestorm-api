@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HistoricalService } from '../currency/historical/historical.service';
 import { Cron } from '@nestjs/schedule';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class TasksService {
