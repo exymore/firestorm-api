@@ -7,7 +7,14 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import * as process from 'process';
-import { HistoricalPeriods } from '../../types';
+import { HistoricalPeriods } from '../../enums/historicalPeriods';
+import {
+  HistoricalRatesByDay,
+  HistoricalRatesByMonth,
+  HistoricalRatesByPeriod,
+  HistoricalRatesByYear,
+} from '../../types/historicalTypes';
+import Helpers from '../../helpers';
 
 @Injectable()
 export class HistoricalService {
@@ -43,10 +50,12 @@ export class HistoricalService {
     );
   }
 
-  async getHistoricalRatesByPeriod(
-    currencySign: string,
-    period: HistoricalPeriods,
-  ) {
+  async getHistoricalRatesByPeriod({
+    currencySign,
+    period,
+    skip,
+    limit,
+  }: HistoricalRatesByPeriod) {
     if (!currencySign) {
       throw new Error('Currency sign is required!');
     }
@@ -61,23 +70,31 @@ export class HistoricalService {
           throw new Error('Currency sign is not valid!');
         }
 
+        if (period === HistoricalPeriods.YEAR) {
+          return this.getHistoricalRatesByYear({
+            date: doc.date,
+            currencySign,
+          });
+        }
+
         if (period === HistoricalPeriods.MONTH) {
-          return this.getHistoricalRatesByMonth(doc.date, currencySign);
+          return this.getHistoricalRatesByMonth({
+            date: doc.date,
+            currencySign,
+            skip,
+            limit,
+          });
         }
 
         if (period === HistoricalPeriods.DAY) {
-          return this.getHistoricalRatesByDay(currencySign);
-        }
-
-        if (period === HistoricalPeriods.YEAR) {
-          return this.getHistoricalRatesByYear(doc.date, currencySign);
+          return this.getHistoricalRatesByDay({ currencySign, skip, limit });
         }
       });
   }
 
   async updateHistoricalRates() {
-    let start = this.getStartDate();
-    let end = this.getEndDate();
+    let start = Helpers.getStartDate();
+    let end = Helpers.getEndDate();
 
     // Will upload data for past 10 years
     for (let i = 0; i <= 20; i++) {
@@ -86,15 +103,18 @@ export class HistoricalService {
       await this.historicalModel.insertMany(docs);
       this.logger.debug(`Inserted from ${start} to ${end}`);
 
-      start = this.getStartDate(end);
-      end = this.getEndDate(end);
+      start = Helpers.getStartDate(end);
+      end = Helpers.getEndDate(end);
 
       // To be ok with API rate limit
-      await this.sleepFor(20000);
+      await Helpers.sleepFor(20000);
     }
   }
 
-  private async getHistoricalRatesByYear(date: string, currencySign: string) {
+  private async getHistoricalRatesByYear({
+    date,
+    currencySign,
+  }: HistoricalRatesByYear) {
     const dayNumber = dayjs(date).get('date');
     const monthNumber = dayjs(date).format('MM');
     return this.historicalModel
@@ -104,34 +124,33 @@ export class HistoricalService {
       .select({ date: 1, data: { [currencySign]: 1 } });
   }
 
-  private async getHistoricalRatesByDay(currencySign: string) {
-    return this.historicalModel
-      .find()
-      .sort({ date: -1 })
-      .select({ date: 1, data: { [currencySign]: 1 } });
-  }
-
-  private async getHistoricalRatesByMonth(date: string, currencySign: string) {
+  private async getHistoricalRatesByMonth({
+    date,
+    currencySign,
+    skip,
+    limit,
+  }: HistoricalRatesByMonth) {
     const dayNumber = dayjs(date).get('date');
     return this.historicalModel
       .find()
       .where({ date: { $regex: `.*-${dayNumber}` } })
       .sort({ date: -1 })
-      .select({ date: 1, data: { [currencySign]: 1 } });
+      .select({ date: 1, data: { [currencySign]: 1 } })
+      .skip(skip || 0)
+      .limit(limit || 365);
   }
 
-  private async sleepFor(ms) {
-    await new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
-
-  private getStartDate(prevStartDate?: string | undefined) {
-    return dayjs(prevStartDate).subtract(1, 'days').format(this.dateFormat);
-  }
-
-  private getEndDate(prevEndDate?: string | undefined) {
-    return dayjs(prevEndDate).subtract(6, 'month').format(this.dateFormat);
+  private async getHistoricalRatesByDay({
+    currencySign,
+    skip,
+    limit,
+  }: HistoricalRatesByDay) {
+    return this.historicalModel
+      .find()
+      .sort({ date: -1 })
+      .select({ date: 1, data: { [currencySign]: 1 } })
+      .skip(skip || 0)
+      .limit(limit || 365);
   }
 
   private async getLatestRatesFromApi() {
