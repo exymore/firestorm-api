@@ -9,8 +9,8 @@ export class TasksService {
   private readonly historicalService: HistoricalService;
   private readonly logger = new Logger(TasksService.name);
 
-  // Every day at 00:00 & 12:00
-  @Cron('12 0 * * *')
+  // Every hour
+  @Cron('0 0 */1 * * *')
   async handleCron() {
     await this.historicalService.updateLatestRates();
     this.logger.log(
