@@ -1,9 +1,12 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Logger, Put, Query } from '@nestjs/common';
 import { HistoricalService } from './historical.service';
 import { HistoricalPeriods } from '../../enums/historicalPeriods';
+import dayjs from 'dayjs';
 
 @Controller('currency/historical')
 export class HistoricalController {
+  private readonly logger = new Logger(HistoricalService.name);
+
   constructor(private readonly historicalService: HistoricalService) {}
 
   @Get('/')
@@ -19,6 +22,17 @@ export class HistoricalController {
       skip,
       limit,
     });
+  }
+
+  @Put('/')
+  async updateLatestRates() {
+    await this.historicalService.updateLatestRates();
+    const message = `Currency rates are updated at: ${dayjs().format(
+      'YYYY-MM-DD HH:mm:ss',
+    )}`;
+
+    this.logger.log(message);
+    return message;
   }
 
   @Get('/latest')
