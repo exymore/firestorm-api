@@ -22,7 +22,7 @@ export class HistoricalController {
   }
 
   @Get('/latest')
-  async getLatestRates() {
-    return this.historicalService.getLatestRates();
+  async getRatesForLastWeek() {
+    return this.historicalService.getRatesForLastWeek();
   }
 }

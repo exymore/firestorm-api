@@ -27,17 +27,8 @@ export class HistoricalService {
     private readonly httpService: HttpService,
   ) {}
 
-  async getLatestRates() {
-    const latestRates = await this.historicalModel
-      .find({}, {}, { sort: { date: -1 } })
-      .limit(7);
-
-    for (const rates of latestRates) {
-      for (const [key, value] of Object.entries(rates.data)) {
-        rates.data[key] = +value.toFixed(3);
-      }
-    }
-    return latestRates;
+  async getRatesForLastWeek() {
+    return this.historicalModel.find({}, {}, { sort: { date: -1 } }).limit(7);
   }
 
   async updateLatestRates() {
