@@ -106,11 +106,11 @@ export class HistoricalService {
     date,
     currencySign,
   }: HistoricalRatesByYear) {
-    const dayNumber = dayjs(date).get('date');
+    const dayNumber = dayjs(date).format('DD');
     const monthNumber = dayjs(date).format('MM');
     return this.historicalModel
       .find()
-      .where({ date: { $regex: `.*-${monthNumber}-${dayNumber}` } })
+      .where({ date: { $regex: `.*-${monthNumber}-${dayNumber}$` } })
       .sort({ date: -1 })
       .select({ date: 1, data: { [currencySign]: 1 } });
   }
@@ -121,10 +121,10 @@ export class HistoricalService {
     skip,
     limit,
   }: HistoricalRatesByMonth) {
-    const dayNumber = dayjs(date).get('date');
+    const dayNumber = dayjs(date).format('DD');
     return this.historicalModel
       .find()
-      .where({ date: { $regex: `.*-${dayNumber}` } })
+      .where({ date: { $regex: `.*-${dayNumber}$` } })
       .sort({ date: -1 })
       .select({ date: 1, data: { [currencySign]: 1 } })
       .skip(skip || 0)
