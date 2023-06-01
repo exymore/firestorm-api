@@ -31,7 +31,10 @@ export class HistoricalService {
     return this.historicalModel.find({}, {}, { sort: { date: -1 } }).limit(7);
   }
 
-  async updateLatestRates() {
+  async updateLatestRates(key: string) {
+    if (key !== process.env.CUREENCY_UPDATE_INTERNAL_KEY) {
+      throw new Error('Currency update key is not valid!');
+    }
     const today = dayjs().format(this.dateFormat);
     const rates = await this.getLatestRatesFromApi();
     return this.historicalModel.updateOne(

@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Put, Query } from '@nestjs/common';
 import { HistoricalService } from './historical.service';
 import { HistoricalPeriods } from '../../enums/historicalPeriods';
 import dayjs from 'dayjs';
@@ -25,14 +25,18 @@ export class HistoricalController {
   }
 
   @Put('/')
-  async updateLatestRates() {
-    await this.historicalService.updateLatestRates();
-    const message = `Currency rates are updated at: ${dayjs().format(
-      'YYYY-MM-DD HH:mm:ss',
-    )}`;
-
-    this.logger.log(message);
-    return message;
+  async updateLatestRates(@Body() { key }: { key: string }) {
+    try {
+      await this.historicalService.updateLatestRates(key);
+      const message = `Currency rates are updated at: ${dayjs().format(
+        'YYYY-MM-DD HH:mm:ss',
+      )}`;
+      this.logger.log(message);
+      return message;
+    } catch (error) {
+      this.logger.error(error);
+      return error.message;
+    }
   }
 
   @Get('/latest')
