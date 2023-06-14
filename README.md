@@ -1,6 +1,6 @@
 # Icestorm
 
-Free currency rates API written on Nest.JS. Supports 33 currencies and rates data from 2004. Updates every day.
+Free currency rates API written on Nest.JS. Supports 33 currencies and rates data from 1999. Updates every day.
 
 <img width="620" alt="Screenshot 2023-06-02 at 12 03 31" src="https://github.com/exymore/icestorm/assets/52958300/92f69fb2-5d8c-4863-8137-6eda4bcd4844">
 
