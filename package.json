@@ -1,7 +1,7 @@
 {
   "name": "icestorm",
   "version": "1.0.0",
-  "description": "Free currency rates api. Supports 33 currencies and rates data from 2004. Updates every day.",
+  "description": "Free currency rates api. Supports 33 currencies and rates data from 1999. Updates every day.",
   "author": "exymore",
   "private": true,
   "license": "MIT",
